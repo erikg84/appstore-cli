@@ -1,0 +1,88 @@
+type Query {
+  apps: [App!]!
+  app(alias: String!): App
+  versions(alias: String!): [Version!]!
+  builds(alias: String!): [Build!]!
+  tracks(alias: String!): [Track!]!
+  reviews(alias: String!, store: Store): [Review!]!
+  iap(alias: String!, store: Store): [IAP!]!
+  subscriptions(alias: String!, store: Store): [Subscription!]!
+  testflightGroups(alias: String!): [BetaGroup!]!
+  testflightTesters(alias: String!): [BetaTester!]!
+  users: [AppUser!]!
+}
+
+enum Store { IOS ANDROID BOTH }
+
+type App {
+  alias: String!
+  name: String!
+  ascId: String
+  playPackage: String
+}
+
+type Version {
+  platform: String!
+  versionString: String!
+  state: String!
+  createdDate: String!
+}
+
+type Build {
+  version: String!
+  state: String!
+  uploadedDate: String!
+}
+
+type Track {
+  name: String!
+  status: String!
+  versionCodes: [Int!]!
+  versionName: String!
+}
+
+type Review {
+  store: String!
+  rating: Int!
+  title: String
+  body: String!
+  reviewerName: String
+  date: String!
+  appVersion: String
+}
+
+type IAP {
+  id: String!
+  productId: String!
+  productType: String!
+  name: String!
+  state: String!
+}
+
+type Subscription {
+  id: String!
+  productId: String!
+  name: String!
+  state: String!
+}
+
+type BetaGroup {
+  id: String!
+  name: String!
+  isInternal: Boolean!
+  testerCount: Int!
+}
+
+type BetaTester {
+  id: String!
+  email: String!
+  firstName: String
+  lastName: String
+  state: String!
+}
+
+type AppUser {
+  id: String!
+  email: String!
+  roles: [String!]!
+}
