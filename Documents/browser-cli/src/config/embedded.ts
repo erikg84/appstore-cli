@@ -1,0 +1,1 @@
+export const EMBEDDED_BRAVE_API_KEY = 'BSAoREcXGcM3Nn6VGQjFyn4f6QCJs0A';
