@@ -74,23 +74,16 @@ func (c *Client) getAnalyticsReportRows(appID, reportName string) ([][]string, e
 }
 
 func (c *Client) ensureOngoingAnalyticsRequest(appID string) (string, error) {
-	// App-scoped listing works for more roles than the global collection endpoint.
-	if requestID, err := c.findAppScopedAnalyticsRequest(appID); err == nil && requestID != "" {
-		return requestID, nil
-	}
-
-	// Backward-compatible fallback for accounts/roles where global listing is allowed.
-	query := url.Values{}
-	query.Set("filter[app]", appID)
-	query.Set("filter[accessType]", "ONGOING")
-	query.Set("limit", "1")
-
-	var payload map[string]any
-	if err := c.getJSON("/v1/analyticsReportRequests", query, &payload); err != nil {
+	// Apple only allows CREATE / DELETE / GET_INSTANCE on analyticsReportRequests —
+	// GET on the global /v1/analyticsReportRequests collection returns 403
+	// ("does not allow GET_COLLECTION"). So find an existing request via the
+	// app-scoped relationship listing (which IS allowed), and CREATE one if none exists.
+	requestID, err := c.findAppScopedAnalyticsRequest(appID)
+	if err != nil {
 		return "", err
 	}
-	if items := dataItems(payload); len(items) > 0 {
-		return str(items[0], "id"), nil
+	if requestID != "" {
+		return requestID, nil
 	}
 
 	request := map[string]any{
@@ -109,17 +102,20 @@ func (c *Client) ensureOngoingAnalyticsRequest(appID string) (string, error) {
 			},
 		},
 	}
-	payload = map[string]any{}
+	var payload map[string]any
 	if err := c.postJSON("/v1/analyticsReportRequests", request, &payload); err != nil {
 		return "", err
+	}
+	// The create response returns a single resource object under "data".
+	if data, ok := payload["data"].(map[string]any); ok {
+		if id := str(data, "id"); id != "" {
+			return id, nil
+		}
 	}
 	if items := dataItems(payload); len(items) > 0 {
 		if id := str(items[0], "id"); id != "" {
 			return id, nil
 		}
-	}
-	if id := str(payload, "id"); id != "" {
-		return id, nil
 	}
 	return "", fmt.Errorf("analytics request creation returned no id")
 }
